@@ -30,16 +30,16 @@ VALUES
     (15, 'Cozy Throw Blanket', 'Furnishings', 24.99, 100, 4.2);
 
 #Use a SELECT statement to order the items by price.
-SELECT *     /*2.*/
+SELECT *     
 FROM superstore
 ORDER BY price;
 
 #Show a statistic about the item prices.
-SELECT MIN(price) as min_price /*3*/
+SELECT MIN(price) as min_price 
 FROM superstore;
 
 #Show a statistic about the price for items only in 'Kitchen Supplies' category.
-SELECT category, SUM(price) as sum_price /*4*/
+SELECT category, SUM(price) as sum_price
 FROM superstore
 WHERE category like 'Kitchen supplies'
 GROUP BY category;
