@@ -1,0 +1,92 @@
+# This analysis was down with the following data provided at https://mystery.knightlab.com/
+
+# Analysis:
+--Open up the crime report to see generally what it looks like
+SELECT *
+FROM crime_scene_report;
+
+-- using the hints provided in at the beginning, i filter the data accordingly in the crime report table
+SELECT *
+FROM crime_scene_report
+WHERE date = 20180115
+AND type = 'murder'
+AND city = 'SQL City';
+
+--from the query, we see description, 2 witnesses: location 'Northwestern Dr' and 'Franklin Ave' named Annabel
+--using this information, we investigate the person table and filter the data based on location and one name given.
+SELECT *
+FROM person
+WHERE address_street_name = 'Northwestern Dr'
+or name like '%Annabel%' and address_street_name = 'Franklin Ave';
+
+-- too many results show up from the query with Northwestern Dr so we will start with Annabel on Franklin Ave 
+SELECT *
+FROM person
+WHERE name like '%Annabel%' and address_street_name = 'Franklin Ave';
+
+-- lets investingate furher by looking at her id, license_id and ssn
+-- since we suspect her, let check her interview data using her id
+SELECT *
+FROM drivers_license
+WHERE id = 490173;
+
+-- we have a suspect #1 but lets check out her interview
+SELECT *
+FROM interview
+where person_id = 16371;
+-- based on the query, she is not the murderer but saw the culprit from her gym on January the 9th
+
+--lets look at the other interview using filtering the address Northewestern Dr
+SELECT *
+FROM person p
+JOIN interview i
+ON p.id = i.person_id
+WHERE address_street_name = 'Northwestern Dr';
+
+-- suspect #2 is also a witness, says he was the man w/ gym membership beginning w/ "48Z", gold status, and car plate included "H42W"
+-- investigate gym check in and filter based on check_in_date :jan 9th of 2018 and information from above statement.
+SELECT *    
+FROM get_fit_now_check_in c
+JOIN get_fit_now_member m
+ON c.membership_id = m.id
+WHERE check_in_date like '20180109' 
+AND membership_status = 'gold' 
+and membership_id like '48Z%' or id = '48Z%';
+
+-- using this info, we get two more suspects Joe Germuska and Jeremy Bowers
+-- use their person_id from this query, filter in driver license table and match with car plate given by suspect #2
+SELECT id, plate_number
+FROM drivers_license 
+WHERE plate_number like '%H42W%';
+
+-- but the id from the gym doesnt match to the id of the car owner. look at interviews again filter using id accosiated with Joe Germuska and Jeremy Bowers.
+SELECT person_id, transcript
+FROM interview
+WHERE person_id = 28819 or person_id = 67318;
+
+--hired as hitman, suspect says woman, rich, around 5'5" (65") or 5'7" (67"), red hair, drives Tesla Model S, attend SQL Symphony Concert 3 times in Dec 2017
+-- examine facebook_event_checkin information, income table, etc.
+WITH red_haired_tesla_drivers AS (
+    SELECT id AS license_id
+    FROM drivers_license
+    WHERE gender = 'female' AND hair_color = 'red'
+      AND car_make = 'Tesla' AND car_model = 'Model S'
+      AND height >= 64 AND height <= 68 
+), rich_suspects AS (
+    SELECT person.id AS person_id, name, annual_income
+    FROM red_haired_tesla_drivers AS rhtd
+    JOIN person ON rhtd.license_id = person.license_id
+    JOIN income ON person.ssn = income.ssn
+), symphony_attenders AS (
+    SELECT person_id, COUNT(1) AS n_checkins
+    FROM facebook_event_checkin
+    WHERE event_name = 'SQL Symphony Concert' 
+      AND `date` REGEXP '^201712' 
+    GROUP BY person_id
+    HAVING n_checkins = 3 
+)
+SELECT name, annual_income
+FROM rich_suspects
+INNER JOIN symphony_attenders ON rich_suspects.person_id = symphony_attenders.person_id
+
+-- Therefore, the murderer mastermind is Miranda Pristly w/ annual income of 310000.
