@@ -1,0 +1,69 @@
+-- Dataset was retreieved from Kaggle: https://www.kaggle.com/datasets/nolanbconaway/pitchfork-data
+-- This analysis focuses on the data from music-centric online magazine platform, Pitchfork and the reviews from over 18,000 commenters. 
+
+
+1. How many reviews are stored in the database?
+SELECT COUNT(reviewid) as total_reviews
+FROM pitchfork.artists;
+
+2. What is the average rating for all reviews?
+SELECT AVG(score) as avg_rating
+FROM pitchfork.reviews;
+
+3. List of top-rated reviews with their rating, TOP 100    
+SELECT reviewid, content, score
+FROM pitchfork.reviews r
+JOIN pitchfork.content c
+ON r.reviewid = c.reviewid
+ORDER BY score desc
+LIMIT 100;
+
+4. How many unique artists or bands have been reviwed on the website?
+SELECT COUNT (distinct artist) as total_artists
+FROM pitchfork.artists;
+
+5. Who are the top 10 most reviewed artists or bands?
+-- various artists = unnamed groups clumped together, so we ignore these and filter them out.
+SELECT artist, COUNT(reviewid) as reviews_per_artist
+FROM pitchfork.reviews
+WHERE artist is not 'various artists' -- include where to filter the various artists out.
+GROUP BY artist
+ORDER BY reviews_per_artist desc
+LIMIT 10;
+
+6. What is the avg. rating by a specific artist or band?
+SELECT artist, AVG(score) as avg_score
+FROM pitchfork.reviews
+GROUP BY artist;
+
+7. How many different music genres are represented in the reviews?
+SELECT COUNT(distinct genre) as total_genres
+FROM pitchfork.genres;
+
+8. Which genre has the highest average  
+SELECT genre, avg(score) as avg_score 
+FROM pitchfork.genres g
+JOIN pitchfork.reviews r
+ON g.reviewid = r.reviewid
+GROUP BY genre
+ORDER BY avg_score desc
+LIMIT 1;
+
+9. Who are the top 5 reviews by the number of reviews they've written
+SELECT author, COUNT(author) as total_reviews
+FROM pitchfork.reviews
+GROUP BY author
+ORDER BY total_reviews desc
+LIMIT 5;
+
+10. Which reviewer has given the higher average ratings to albums
+SELECT author, AVG(score) as avg_score
+FROM pitchfork.reviews
+GROUP BY author
+ORDER BY avg_score desc
+LIMIT 1;
+
+11. How many reviews were published in a specific year? i.e, 2016
+SELECT year, COUNT(reviewid) as total_reviews
+FROM pitchfork.years
+WHERE year = 2016;
